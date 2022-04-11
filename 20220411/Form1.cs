@@ -11,12 +11,17 @@ using System.Windows.Forms;
 using System.Net; //匯入網路通訊協定相關函數
 using System.Net.Sockets; //匯入網路插座功能函數
 using System.Threading; //匯入多執行緒功能函數
-using Microsoft.VisualBasic.PowerPacks; //匯入 VB 向量繪圖功能
+using Microsoft.VisualBasic.PowerPacks; //匯入VB向量繪圖功能
 
 namespace _20220411
 {
     public partial class Form1 : Form
     {
+        public Form1()
+        {
+            InitializeComponent();
+        }
+
         UdpClient U; //宣告UDP通訊物件
         Thread Th;   //宣告監聽用執行續
 
@@ -26,19 +31,14 @@ namespace _20220411
         Point stP; //繪圖起點
         string p; //筆畫動作字串
 
-        public Form1()
-        {
-            InitializeComponent();
-        }
-
         //表單載入
         private void Form1_Load(object sender, EventArgs e)
         {
             this.Text += " " + MyIP(); //顯示本機IP於標題列
             C = new ShapeContainer(); //建立畫布(本機繪圖用)
-            this.Controls.Add(C); //加入畫布C 到 form1
+            this.Controls.Add(C); //加入畫布C到form1
             D = new ShapeContainer(); //建立畫布(遠端繪圖用)
-            this.Controls.Add(D); //加入畫布D 到 form1
+            this.Controls.Add(D); //加入畫布D到form1
         }
 
         //找出本機IP
@@ -56,10 +56,19 @@ namespace _20220411
             return ""; //找不到合格IP，回傳空字串
         }
 
+        //啟動監聽按鈕程序
+        private void btn_Connect_Click(object sender, EventArgs e)
+        {
+            Control.CheckForIllegalCrossThreadCalls = false; //忽略跨執行緒操作的錯誤
+            Th = new Thread(Listen); //建立監聽執行緒，目標副程式→Listen
+            Th.Start(); //啟動監聽執行緒
+            btn_Connect.Enabled = false; //按鍵失效，不能(也不需要)重複開啟監聽
+        }
+
         //監聽副程序
         private void Listen()
         {
-            int Port = int.Parse(tb_Target_Port.Text); //設定監聽用的通訊埠
+            int Port = int.Parse(tb_Answer_Port.Text); //設定監聽用的通訊埠
             U = new UdpClient(Port); //建立UDP監聽物件
 
             IPEndPoint EP = new IPEndPoint(IPAddress.Parse("127.0.0.1"), Port); //建立監聽端點資訊
@@ -67,8 +76,8 @@ namespace _20220411
             {
                 byte[] B = U.Receive(ref EP); //讀取網路訊息(Byte陣列)
                 string A = Encoding.Default.GetString(B); //翻譯B陣列為字串A
-                string[] z = A.Split('_'); //切割顏色與座標資訊
-                string[] Q = z[1].Split('/'); //切割座標點資訊
+                string[] Z = A.Split('_'); //切割顏色與座標資訊
+                string[] Q = Z[1].Split('/'); //切割座標點資訊
                 Point[] R = new Point[Q.Length]; //宣告座標點陣列
 
                 // 定義繪圖座標點陣列
@@ -85,7 +94,7 @@ namespace _20220411
                     LineShape L = new LineShape(); //建立線段物件
                     L.StartPoint = R[i]; //線段起點
                     L.EndPoint = R[i + 1]; //線段終點
-                    switch (z[0]) //筆色
+                    switch (Z[0]) //筆色
                     {
                         case "1": //紅筆
                             L.BorderColor = Color.Red;
@@ -105,15 +114,6 @@ namespace _20220411
             }
         }
 
-        //啟動監聽按鈕程序
-        private void btn_Connect_Click(object sender, EventArgs e)
-        {
-            Control.CheckForIllegalCrossThreadCalls = false; //忽略跨執行緒操作的錯誤
-            Th = new Thread(Listen); //建立監聽執行緒，目標副程式→Listen
-            Th.Start(); //啟動監聽執行緒
-            btn_Connect.Enabled = false; //按鍵失效，不能(也不需要)重複開啟監聽
-        }
-
         //本機端開始繪圖
         private void Form1_MouseDown(object sender, MouseEventArgs e)
         {
@@ -129,7 +129,7 @@ namespace _20220411
                 LineShape L = new LineShape(); //建立線段物件
                 L.StartPoint = stP; //線段起點
                 L.EndPoint = e.Location; //線段終點
-                if(rdb_Red.Checked) { L.BorderColor = Color.Red; } //紅筆
+                if (rdb_Red.Checked) { L.BorderColor = Color.Red; } //紅筆
                 if (rdb_Green.Checked) { L.BorderColor = Color.Lime; } //亮綠筆
                 if (rdb_Blue.Checked) { L.BorderColor = Color.Blue; } //藍筆
                 if (rdb_Black.Checked) { L.BorderColor = Color.Black; } //黑筆
